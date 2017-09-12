@@ -658,6 +658,14 @@ static int init_send(struct rtmp_stream *stream)
 			obs_data_t *params = obs_encoder_get_settings(vencoder);
 			if (params) {
 				int bitrate = obs_data_get_int(params, "bitrate");
+				if (!bitrate) {
+					warn ("Video encoder didn't return a "
+						"valid bitrate, new network "
+						"code may function poorly. "
+						"Low latency mode disabled.");
+					stream->low_latency_mode = false;
+					bitrate = 10000;
+				}
 				total_bitrate += bitrate;
 				obs_data_release(params);
 			}
@@ -668,6 +676,8 @@ static int init_send(struct rtmp_stream *stream)
 			obs_data_t *params = obs_encoder_get_settings(aencoder);
 			if (params) {
 				int bitrate = obs_data_get_int(params, "bitrate");
+				if (!bitrate)
+					bitrate = 160;
 				total_bitrate += bitrate;
 				obs_data_release(params);
 			}
@@ -1173,21 +1183,23 @@ static int rtmp_stream_connect_time(void *data)
 }
 
 struct obs_output_info rtmp_output_info = {
-	.id                 = "rtmp_output",
-	.flags              = OBS_OUTPUT_AV |
-	                      OBS_OUTPUT_ENCODED |
-	                      OBS_OUTPUT_SERVICE |
-	                      OBS_OUTPUT_MULTI_TRACK,
-	.get_name           = rtmp_stream_getname,
-	.create             = rtmp_stream_create,
-	.destroy            = rtmp_stream_destroy,
-	.start              = rtmp_stream_start,
-	.stop               = rtmp_stream_stop,
-	.encoded_packet     = rtmp_stream_data,
-	.get_defaults       = rtmp_stream_defaults,
-	.get_properties     = rtmp_stream_properties,
-	.get_total_bytes    = rtmp_stream_total_bytes_sent,
-	.get_congestion     = rtmp_stream_congestion,
-	.get_connect_time_ms= rtmp_stream_connect_time,
-	.get_dropped_frames = rtmp_stream_dropped_frames
+	.id                   = "rtmp_output",
+	.flags                = OBS_OUTPUT_AV |
+	                        OBS_OUTPUT_ENCODED |
+	                        OBS_OUTPUT_SERVICE |
+	                        OBS_OUTPUT_MULTI_TRACK,
+	.encoded_video_codecs = "h264",
+	.encoded_audio_codecs = "aac",
+	.get_name             = rtmp_stream_getname,
+	.create               = rtmp_stream_create,
+	.destroy              = rtmp_stream_destroy,
+	.start                = rtmp_stream_start,
+	.stop                 = rtmp_stream_stop,
+	.encoded_packet       = rtmp_stream_data,
+	.get_defaults         = rtmp_stream_defaults,
+	.get_properties       = rtmp_stream_properties,
+	.get_total_bytes      = rtmp_stream_total_bytes_sent,
+	.get_congestion       = rtmp_stream_congestion,
+	.get_connect_time_ms  = rtmp_stream_connect_time,
+	.get_dropped_frames   = rtmp_stream_dropped_frames
 };

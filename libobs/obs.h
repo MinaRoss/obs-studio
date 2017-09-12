@@ -260,6 +260,9 @@ EXPORT bool obs_initialized(void);
 /** @return The current core version */
 EXPORT uint32_t obs_get_version(void);
 
+/** @return The current core version string */
+EXPORT const char *obs_get_version_string(void);
+
 /**
  * Sets a new locale to use for modules.  This will call obs_module_set_locale
  * for each module with the new locale.
@@ -373,6 +376,10 @@ EXPORT void obs_add_module_path(const char *bin, const char *data);
 
 /** Automatically loads all modules from module paths (convenience function) */
 EXPORT void obs_load_all_modules(void);
+
+/** Notifies modules that all modules have been loaded.  This function should
+ * be called after all modules have been loaded. */
+EXPORT void obs_post_load_modules(void);
 
 struct obs_module_info {
 	const char *bin_path;
@@ -1165,8 +1172,15 @@ typedef void (*obs_transition_video_render_callback_t)(void *data,
 		uint32_t cx, uint32_t cy);
 typedef float (*obs_transition_audio_mix_callback_t)(void *data, float t);
 
+EXPORT float obs_transition_get_time(obs_source_t *transition);
+
 EXPORT void obs_transition_video_render(obs_source_t *transition,
 		obs_transition_video_render_callback_t callback);
+
+/** Directly renders its sub-source instead of to texture.  Returns false if no
+ * longer transitioning */
+EXPORT bool obs_transition_video_render_direct(obs_source_t *transition,
+		enum obs_transition_target target);
 
 EXPORT bool obs_transition_audio_render(obs_source_t *transition,
 		uint64_t *ts_out, struct obs_source_audio_mix *audio,
@@ -1523,6 +1537,12 @@ EXPORT bool obs_output_reconnecting(const obs_output_t *output);
 /** Pass a string of the last output error, for UI use */
 EXPORT void obs_output_set_last_error(obs_output_t *output,
 		const char *message);
+EXPORT const char *obs_output_get_last_error(obs_output_t *output);
+
+EXPORT const char *obs_output_get_supported_video_codecs(
+		const obs_output_t *output);
+EXPORT const char *obs_output_get_supported_audio_codecs(
+		const obs_output_t *output);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
@@ -1803,6 +1823,10 @@ EXPORT void obs_service_apply_encoder_settings(obs_service_t *service,
 EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
+
+/* NOTE: This function is temporary and should be removed/replaced at a later
+ * date. */
+EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
 
 
 /* ------------------------------------------------------------------------- */
